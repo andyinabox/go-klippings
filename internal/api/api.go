@@ -3,12 +3,10 @@ package api
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"net/http"
 	"path/filepath"
 
 	"github.com/andyinabox/go-klippings-api/internal/database"
-	"github.com/andyinabox/go-klippings-api/pkg/types"
 )
 
 var db *database.Database
