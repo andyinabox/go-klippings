@@ -1,12 +1,15 @@
 package types
 
-import ()
+import (
+	"github.com/jinzhu/gorm"
+)
 
 // Clipping encapsulates data for a single kindle clipping
 type Author struct {
-	Name string
-
-	rawName string
+	gorm.Model
+	Name    string
+	RawName string
+	Titles  []*Title `gorm:"many2many:title_authors;"`
 }
 
 // Create a new clipping
