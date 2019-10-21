@@ -10,18 +10,22 @@ import (
 	"github.com/andyinabox/go-klippings-api/pkg/types"
 )
 
+const routerGroup = "/api"
+
 var db *database.Database
-var router *gin.Engine
+var router *gin.RouterGroup
 
 func Create(r *gin.Engine, d *database.Database) error {
 
-	router, db = r, d
+	router = r.Group(routerGroup)
+	db = d
 
 	// Ping test
 	router.GET("/ping", ping)
 
 	// Clippings
 	// router.GET("/clippings/", getClippings)
+	// router.POST("/clippings/", uploadClippings)
 	// router.GET("/clippings/:id", getClipping)
 	// router.PUT("/clippings/:id", updateClipping)
 
@@ -34,9 +38,6 @@ func Create(r *gin.Engine, d *database.Database) error {
 	router.GET("/titles/", getTitles)
 	// router.GET("/titles/:id", getTitle)
 	// router.PUT("/titles/:id", updateTitle)
-
-	// file upload
-	router.POST("/upload", uploadFile)
 
 	return nil
 }
@@ -76,7 +77,7 @@ func ping(c *gin.Context) {
 	})
 }
 
-func uploadFile(c *gin.Context) {
+func uploadClippings(c *gin.Context) {
 	file, err := c.FormFile("file")
 
 	if err != nil {
