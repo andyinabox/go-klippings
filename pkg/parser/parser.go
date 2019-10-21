@@ -21,15 +21,17 @@ const (
 )
 
 type Data struct {
-	Title         string
-	Authors       string
-	Content       string
-	LocationRange [2]uint32
-	PageRange     [2]uint32
-	Type          string
-	Date          time.Time
-	Source        string
-	Checksum      uint32
+	Title           string
+	TitleChecksum   uint32
+	Authors         map[string]uint32
+	Content         string
+	ContentChecksum uint32
+	LocationRange   [2]uint32
+	PageRange       [2]uint32
+	Type            string
+	Date            time.Time
+	Source          string
+	SourceChecksum  uint32
 }
 
 // regular expressions
@@ -54,12 +56,31 @@ func Parse(r io.Reader) ([]Data, error) {
 	return data, nil
 }
 
+func parseAuthors(b []byte) (map[string]uint32, error) {
+	m := make(map[string]uint32)
+
+	authors := bytes.Split(b, []byte(";"))
+
+	if len(authors) < 1 {
+		return m, errors.New("No authors found")
+	}
+
+	for _, a := range authors {
+		a = bytes.TrimSpace(a)
+		cs := crc32.ChecksumIEEE(a)
+		s := string(a)
+		m[s] = cs
+	}
+
+	return m, nil
+}
+
 func ParseChunk(b []byte) (Data, error) {
 	var lines [][]byte
 
 	var d = Data{
-		Source:   string(b),
-		Checksum: crc32.ChecksumIEEE(b),
+		Source:         string(b),
+		SourceChecksum: crc32.ChecksumIEEE(b),
 	}
 
 	// create scanner for chunk bytes
@@ -82,16 +103,22 @@ func ParseChunk(b []byte) (Data, error) {
 	// anything after the first two lines is part
 	// of the clipping content
 	if len(lines) > 2 {
-		d.Content = string(bytes.Join(lines[2:], []byte(" ")))
+		contentBytes := bytes.Join(lines[2:], []byte(" "))
+		d.ContentChecksum = crc32.ChecksumIEEE(contentBytes)
+		d.Content = string(contentBytes)
 	}
 
 	// match data for first line
 	l1 := l1re.FindSubmatch(lines[0])
 	if l1 != nil {
 		// title
+		d.TitleChecksum = crc32.ChecksumIEEE(l1[1])
 		d.Title = string(l1[1])
 		// authors
-		d.Authors = string(l1[2])
+		authors, err := parseAuthors(l1[2])
+		if err == nil {
+			d.Authors = authors
+		}
 	}
 
 	// match data for second line
@@ -110,7 +137,7 @@ func ParseChunk(b []byte) (Data, error) {
 	return d, nil
 }
 
-func parseRange(b []byte) (r [2]uint32) {
+func parseRange(b []byte) [2]uint32 {
 	var a [2]uint32
 
 	if b == nil {

@@ -67,6 +67,41 @@ func TestRegExp(t *testing.T) {
 
 }
 
+func TestParseAuthors(t *testing.T) {
+	a1 := []byte("Graeber, David")
+	a2 := []byte("Nietzsche, Friedrich; Clark, Maudemarie;Swensen, Alan J.")
+
+	a1Map, err := parseAuthors(a1)
+	if err != nil {
+		t.Fatalf("Error parsing authors: %v", err)
+	}
+	if len(a1Map) < 1 {
+		t.Fatalf("Empty result for a1")
+	}
+	expectedA1Map := map[string]uint32{
+		string(a1): crc32.ChecksumIEEE(a1),
+	}
+	if !reflect.DeepEqual(a1Map, expectedA1Map) {
+		t.Fatalf("Expected '%v', got '%v'", expectedA1Map, a1Map)
+	}
+
+	a2Map, err := parseAuthors(a2)
+	if err != nil {
+		t.Fatalf("Error parsing authors: %v", err)
+	}
+	if len(a2Map) < 1 {
+		t.Fatalf("Empty result for a2")
+	}
+	expectedA2Map := map[string]uint32{
+		"Nietzsche, Friedrich": crc32.ChecksumIEEE([]byte("Nietzsche, Friedrich")),
+		"Clark, Maudemarie":    crc32.ChecksumIEEE([]byte("Clark, Maudemarie")),
+		"Swensen, Alan J.":     crc32.ChecksumIEEE([]byte("Swensen, Alan J.")),
+	}
+	if !reflect.DeepEqual(a2Map, expectedA2Map) {
+		t.Fatalf("Expected '%v', got '%v'", expectedA2Map, a2Map)
+	}
+}
+
 func TestParser(t *testing.T) {
 	f, err := os.Open("../../test/data/my_clippings.txt")
 	if err != nil {
@@ -96,9 +131,9 @@ As the great classicist Moses Finley often liked to say, in the ancient world, a
 		t.Fatalf("Expected '%s', got '%s'", expectedSource, c.Source)
 	}
 
-	expectedChecksum := crc32.ChecksumIEEE([]byte(expectedSource))
-	if c.Checksum != expectedChecksum {
-		t.Fatalf("Expected '%v', got '%v'", expectedChecksum, c.Checksum)
+	expectedSourceChecksum := crc32.ChecksumIEEE([]byte(expectedSource))
+	if c.SourceChecksum != expectedSourceChecksum {
+		t.Fatalf("Expected '%v', got '%v'", expectedSourceChecksum, c.SourceChecksum)
 	}
 
 	expectedTitle := "Debt: The First 5,000 Years"
@@ -106,14 +141,28 @@ As the great classicist Moses Finley often liked to say, in the ancient world, a
 		t.Fatalf("Expected '%v', got '%v", expectedTitle, c.Title)
 	}
 
-	expectedAuthors := "Graeber, David"
-	if c.Authors != expectedAuthors {
+	expectedTitleChecksum := crc32.ChecksumIEEE([]byte(expectedTitle))
+	if c.TitleChecksum != expectedTitleChecksum {
+		t.Fatalf("Expected '%v', got '%v'", expectedTitleChecksum, c.TitleChecksum)
+	}
+
+	expectedAuthor := "Graeber, David"
+	expectedAuthorChecksum := crc32.ChecksumIEEE([]byte(expectedAuthor))
+	expectedAuthors := map[string]uint32{
+		expectedAuthor: expectedAuthorChecksum,
+	}
+	if !reflect.DeepEqual(c.Authors, expectedAuthors) {
 		t.Fatalf("Expected '%v', got '%v'", expectedAuthors, c.Authors)
 	}
 
 	expectedContent := "As the great classicist Moses Finley often liked to say, in the ancient world, all revolutionary movements had a single program: “Cancel the debts and redistribute the land.”5"
 	if c.Content != expectedContent {
 		t.Fatalf("Expected '%v', got '%v'", expectedContent, c.Content)
+	}
+
+	expectedContentChecksum := crc32.ChecksumIEEE([]byte(expectedContent))
+	if c.ContentChecksum != expectedContentChecksum {
+		t.Fatalf("Expected '%v', got '%v'", expectedContentChecksum, c.ContentChecksum)
 	}
 
 	expectedType := "Highlight"
