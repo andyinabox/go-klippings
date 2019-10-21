@@ -2,36 +2,33 @@ package types
 
 import (
 	"github.com/jinzhu/gorm"
-	"hash"
 	"time"
 )
 
-type ClippingType string
+// type ClippingType string
 
-const (
-	BookmarkClippingType  = ClippingType("Bookmark")
-	HighlightClippingType = ClippingType("Highlight")
-)
+// const (
+// 	BookmarkClippingType  = ClippingType("Bookmark")
+// 	HighlightClippingType = ClippingType("Highlight")
+// )
 
 // Clipping encapsulates data for a single kindle clipping
 type Clipping struct {
 	gorm.Model
-	Hash               hash.Hash `gorm:"UNIQUE_INDEX"`
+	Checksum           string `gorm:"UNIQUE_INDEX"`
 	TitleID            uint
 	Title              Title
 	LocationRangeStart uint
 	LocationRangeEnd   uint
 	PageRangeStart     uint
 	PageRangeEnd       uint
-	Type               ClippingType
-	Date               *time.Time
+	Type               string
+	Date               time.Time
 	Content            string
+	RawContent         string
+	RawTitle           string
+	RawAuthors         string
 	Raw                string
-}
-
-// Create a new clipping
-func (c *Clipping) Create() (Clipping, error) {
-	return Clipping{}, nil
 }
 
 func (c *Clipping) LocationRange() [2]uint {

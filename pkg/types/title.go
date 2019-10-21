@@ -8,7 +8,7 @@ import (
 type Title struct {
 	gorm.Model
 	Title     string
-	Clippings []Clipping
+	Clippings []*Clipping
 	Authors   []*Author `gorm:"many2many:title_authors;"`
 	RawTitle  string
 }

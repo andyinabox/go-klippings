@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/andyinabox/pkg/types"
+	"github.com/andyinabox/go-klippings-api/pkg/types"
 )
 
 var db *gorm.DB
@@ -17,9 +17,9 @@ func Create(r *gin.Engine, d *gorm.DB) error {
 
 	router, db = r, d
 
-	db.AutoMigrate(&types.Clipping)
-	db.AutoMigrate(&types.Title)
-	db.AutoMigrate(&types.Author)
+	db.AutoMigrate(&types.Clipping{})
+	db.AutoMigrate(&types.Title{})
+	db.AutoMigrate(&types.Author{})
 
 	// Ping test
 	router.GET("/ping", ping)
