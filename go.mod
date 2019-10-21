@@ -1,4 +1,4 @@
-module github.com/andyinabox/go-klippings
+module github.com/andyinabox/go-klippings-api
 
 go 1.13
 
