@@ -82,3 +82,51 @@ func TestProcessParseData(t *testing.T) {
 		t.Logf("Error remove test db: %v", err)
 	}
 }
+
+func TestDiplicates(t *testing.T) {
+	f, err := os.Open(testDataFile)
+	if err != nil {
+		t.Fatalf("Error opening clippings file: %v", err)
+	}
+	defer f.Close()
+
+	data, err := parser.Parse(f)
+	if err != nil {
+		t.Fatalf("Error parsing data: %v", err)
+	}
+
+	db, err := Open(testDb)
+	if err != nil {
+		t.Fatalf("Error opening db: %v", err)
+	}
+
+	err = db.ProcessParseData(&data)
+	if err != nil {
+		t.Fatalf("Error processing parsed data: %v", err)
+	}
+
+	var initialCount int
+	var secondCount int
+
+	db.DB.Model(&types.Clipping{}).Count(&initialCount)
+
+	err = db.ProcessParseData(&data)
+	if err != nil {
+		t.Fatalf("Error processing parsed data a second time: %v", err)
+	}
+
+	db.DB.Model(&types.Clipping{}).Count(&secondCount)
+
+	if initialCount != secondCount {
+		t.Fatalf("Expected %v clippings after second upload, found %v", initialCount, secondCount)
+	}
+
+	err = db.DB.Close()
+	if err != nil {
+		t.Fatalf("Error closing db: %v", err)
+	}
+	err = os.Remove(testDb)
+	if err != nil {
+		t.Logf("Error remove test db: %v", err)
+	}
+}

@@ -45,21 +45,14 @@ func (d *Database) ProcessParseData(data *[]parser.Data) error {
 
 func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 
-	// var c Clipping
-	// var t Title
-	// var authors []Author
-
-	var cCount int
-	var tCount int
+	var cCount int // count matching clippings in db
+	var tCount int // count matching titles in db
 
 	d.DB.Model(&Clipping{}).Where("id = ?", p.SourceChecksum).Count(&cCount)
 	d.DB.Model(&Title{}).Where("id = ?", p.TitleChecksum).Count(&tCount)
 
-	// log.Printf("%v matching clippings found, %v matching titles\n", cCount, tCount)
-
 	// if the clipping already exists we can skip it
 	if cCount > 0 {
-		log.Println("Clipping already exists, skipping")
 		return true, nil
 	}
 
