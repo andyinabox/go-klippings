@@ -6,10 +6,12 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"log"
+	"os"
 )
 
 type Database struct {
-	DB *gorm.DB
+	DB   *gorm.DB
+	File string
 }
 
 func Open(fp string) (*Database, error) {
@@ -22,7 +24,7 @@ func Open(fp string) (*Database, error) {
 	db.AutoMigrate(&Title{})
 	db.AutoMigrate(&Author{})
 
-	return &Database{db}, nil
+	return &Database{db, fp}, nil
 }
 
 func (d *Database) GetAllTitles(t *[]Title, deep bool) error {
@@ -30,6 +32,22 @@ func (d *Database) GetAllTitles(t *[]Title, deep bool) error {
 		d.DB.Preload("Clippings").Preload("Authors").Find(t)
 	} else {
 		d.DB.Find(t)
+	}
+	return nil
+}
+
+func (d *Database) Close() error {
+	return d.DB.Close()
+}
+
+func (d *Database) Destroy() error {
+	err := d.DB.Close()
+	if err != nil {
+		return err
+	}
+	err = os.Remove(d.File)
+	if err != nil {
+		return err
 	}
 	return nil
 }

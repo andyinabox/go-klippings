@@ -15,66 +15,49 @@ const routerGroup = "/api"
 var db *database.Database
 var router *gin.RouterGroup
 
+// Create create API router group
 func Create(r *gin.Engine, d *database.Database) error {
 
 	router = r.Group(routerGroup)
 	db = d
 
-	// Ping test
-	router.GET("/ping", ping)
+	router.GET("", getRoot)
 
 	// Clippings
-	// router.GET("/clippings/", getClippings)
+	router.GET("/clippings", getClippings)
 	// router.POST("/clippings/", uploadClippings)
-	// router.GET("/clippings/:id", getClipping)
-	// router.PUT("/clippings/:id", updateClipping)
 
 	// Authors
-	// router.GET("/authors/", getAuthors)
-	// router.GET("/authors/:id", getAuthor)
-	// router.PUT("/authors/:id", updateAuthor)
+	router.GET("/authors", getAuthors)
 
 	// Titles
-	router.GET("/titles/", getTitles)
-	// router.GET("/titles/:id", getTitle)
-	// router.PUT("/titles/:id", updateTitle)
+	router.GET("/titles", getTitles)
 
 	return nil
 }
 
+func getRoot(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Nothin to see here",
+	})
+}
+
+func getClippings(c *gin.Context) {
+	var clippings []types.Clipping
+	db.DB.Find(&clippings)
+	c.JSON(http.StatusOK, clippings)
+}
+
 func getTitles(c *gin.Context) {
 	var titles []types.Title
-	_ = db.GetAllTitles(&titles, true)
-
+	db.DB.Find(&titles)
 	c.JSON(http.StatusOK, titles)
 }
 
-// func getClippings(c *gin.Context) {
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message": "No clippings yet",
-// 	})
-// }
-
-// func getClipping(c *gin.Context) {
-// 	id := c.Params.ByName("id")
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message": fmt.Sprintf("No clippings yet: %v", id),
-// 	})
-// }
-
-// func updateClipping(c *gin.Context) {
-// 	id := c.Params.ByName("id")
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message": fmt.Sprintf("No clippings yet: %v", id),
-// 	})
-// }
-
-func ping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+func getAuthors(c *gin.Context) {
+	var authors []types.Author
+	db.DB.Find(&authors)
+	c.JSON(http.StatusOK, authors)
 }
 
 func uploadClippings(c *gin.Context) {
