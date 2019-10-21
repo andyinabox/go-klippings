@@ -2,7 +2,7 @@ package database
 
 import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
-	"github.com/andyinabox/go-klippings-api/pkg/types"
+	. "github.com/andyinabox/go-klippings-api/pkg/types"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"log"
@@ -18,9 +18,9 @@ func Open(fp string) (*Database, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&types.Clipping{})
-	db.AutoMigrate(&types.Title{})
-	db.AutoMigrate(&types.Author{})
+	db.AutoMigrate(&Clipping{})
+	db.AutoMigrate(&Title{})
+	db.AutoMigrate(&Author{})
 
 	return &Database{db}, nil
 }
@@ -37,7 +37,26 @@ func (db *Database) ProcessParseData(data *[]parser.Data) error {
 
 func (db *Database) ProcessParseDataSingle(d *parser.Data) error {
 	log.Println("ProcessParseDataSingle not implemented yet")
-	// c := &types.Clipping{
+
+	var c Clipping
+	var t Title
+	var authors []Author
+
+	db.DB.FirstOrInit(&c, Clipping{
+		ID: d.SourceChecksum,
+	})
+
+	db.DB.FirstOrInit(&t, Title{
+		ID: d.TitleChecksum,
+	})
+
+	for _, id := range d.Authors {
+		var a Author
+		db.DB.FirstOrInit(&a, id)
+		authors = append(authors, a)
+	}
+
+	// c := Clipping{
 	// 	ID:                 d.SourceChecksum,
 	// 	TitleID:            d.TitleChecksum,
 	// 	LocationRangeStart: d.LocationRange[0],
@@ -51,9 +70,9 @@ func (db *Database) ProcessParseDataSingle(d *parser.Data) error {
 	// 	Source:             d.Source,
 	// }
 
-	// var authors = make([]*types.Author, 0)
+	// var authors = make([]*Author, 0)
 	// for name, id := range d.Authors {
-	// 	a := &types.Author{
+	// 	a := &Author{
 	// 		ID:         id,
 	// 		Name:       name,
 	// 		SourceName: name,
@@ -61,7 +80,7 @@ func (db *Database) ProcessParseDataSingle(d *parser.Data) error {
 	// 	authors = append(authors, a)
 	// }
 
-	// t := &types.Title{
+	// t := Title{
 	// 	ID:          d.TitleChecksum,
 	// 	Title:       d.Title,
 	// 	SourceTitle: d.Title,
