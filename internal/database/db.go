@@ -25,79 +25,95 @@ func Open(fp string) (*Database, error) {
 	return &Database{db}, nil
 }
 
-func (db *Database) ProcessParseData(data *[]parser.Data) error {
-	for _, d := range *data {
-		err := db.ProcessParseDataSingle(&d)
+func (d *Database) GetAllTitles(t *[]Title) error {
+	d.DB.Preload("Clippings").Preload("Authors").Find(t)
+	return nil
+}
+
+func (d *Database) ProcessParseData(data *[]parser.Data) error {
+	for _, p := range *data {
+		skip, err := d.ProcessParseDataSingle(&p)
 		if err != nil {
 			return err
+		}
+		if skip {
+			log.Printf("Skipped clipping %v, already exists", p.SourceChecksum)
 		}
 	}
 	return nil
 }
 
-func (db *Database) ProcessParseDataSingle(d *parser.Data) (bool, error) {
+func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 
 	// var c Clipping
 	// var t Title
 	// var authors []Author
 
-	var count int
-	db.DB.Model(&Clipping{}).Where("id = ?", d.SourceChecksum).Count(&count)
+	var cCount int
+	var tCount int
+
+	d.DB.Model(&Clipping{}).Where("id = ?", p.SourceChecksum).Count(&cCount)
+	d.DB.Model(&Title{}).Where("id = ?", p.TitleChecksum).Count(&tCount)
+
+	// log.Printf("%v matching clippings found, %v matching titles\n", cCount, tCount)
 
 	// if the clipping already exists we can skip it
-	if count > 0 {
-		return false, nil
+	if cCount > 0 {
+		log.Println("Clipping already exists, skipping")
+		return true, nil
 	}
 
-	// db.DB.First(&c, d.SourceChecksum)
+	// otherwise we can create a new clipping
+	c := Clipping{
+		ID:                 p.SourceChecksum,
+		LocationRangeStart: p.LocationRange[0],
+		LocationRangeEnd:   p.LocationRange[1],
+		PageRangeStart:     p.PageRange[0],
+		PageRangeEnd:       p.PageRange[1],
+		Type:               p.Type,
+		Date:               p.Date,
+		Content:            p.Content,
+		SourceContent:      p.Content,
+		Source:             p.Source,
+	}
+	d.DB.Create(&c)
 
-	log.Printf("%v records found\n", count)
+	// Now we'll create or init our title
+	var t Title
+	d.DB.FirstOrInit(&t, Title{
+		ID:          p.TitleChecksum,
+		SourceTitle: p.Title,
+	})
+	// if it's new we'll set the title
+	// from source
+	if t.Title == "" {
+		t.Title = p.Title
+	}
+	// add the clipping to
+	d.DB.Model(&t).Association("Clippings").Append(&c)
+	d.DB.Save(&t)
 
-	// for name, id := range d.Authors {
-	// 	var a Author
-	// 	db.DB.FirstOrInit(&a, id)
-	// 	a.Name = name
-	// 	a.SourceName = name
-	// 	authors = append(authors, a)
-	// }
+	// this means it's a new title
+	// we should really only need to add
+	// authors once per title
+	if tCount == 0 {
+		authors := make([]Author, 0)
+		for name, id := range p.Authors {
+			a := Author{
+				ID:         id,
+				Name:       name,
+				SourceName: name,
+			}
+			d.DB.Create(&a)
+			authors = append(authors, a)
+		}
 
-	// db.DB.FirstOrInit(&t, Title{
-	// 	ID: d.TitleChecksum,
-	// })
+		if len(authors) > 0 {
+			d.DB.Model(&t).Association("Authors").Append(&authors)
+		}
 
-	// db.Model(&Title).Association("Clippings").Apppend(&c)
-
-	// c := Clipping{
-	// 	ID:                 d.SourceChecksum,
-	// 	TitleID:            d.TitleChecksum,
-	// 	LocationRangeStart: d.LocationRange[0],
-	// 	LocationRangeEnd:   d.LocationRange[1],
-	// 	PageRangeStart:     d.PageRange[0],
-	// 	PageRangeEnd:       d.PageRange[1],
-	// 	Type:               d.Type,
-	// 	Date:               d.Date,
-	// 	Content:            d.Content,
-	// 	SourceContent:      d.Content,
-	// 	Source:             d.Source,
-	// }
-
-	// var authors = make([]*Author, 0)
-	// for name, id := range d.Authors {
-	// 	a := &Author{
-	// 		ID:         id,
-	// 		Name:       name,
-	// 		SourceName: name,
-	// 	}
-	// 	authors = append(authors, a)
-	// }
-
-	// t := Title{
-	// 	ID:          d.TitleChecksum,
-	// 	Title:       d.Title,
-	// 	SourceTitle: d.Title,
-	// }
-
-	return true, nil
+	}
+	return false, nil
 }
 
 // func CheckTitle

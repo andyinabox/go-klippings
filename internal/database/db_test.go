@@ -2,7 +2,9 @@ package database
 
 import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
+	"github.com/andyinabox/go-klippings-api/pkg/types"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -44,5 +46,39 @@ func TestProcessParseData(t *testing.T) {
 	err = db.ProcessParseData(&data)
 	if err != nil {
 		t.Fatalf("Error processing parsed data: %v", err)
+	}
+
+	var titles []types.Title
+	err = db.GetAllTitles(&titles)
+	if err != nil {
+		t.Fatalf("Error retrieving titles: %v", err)
+	}
+	if len(titles) < 1 {
+		t.Fatal("No titles returned")
+	}
+
+	t.Log("Found titles:")
+	for _, title := range titles {
+
+		// gather authors
+		aList := title.Authors
+		authors := make([]string, len(aList))
+		for i, a := range aList {
+			authors[i] = a.Name
+		}
+
+		// gather clippings
+		clippings := title.Clippings
+
+		t.Logf("%s by %s; (%d clippings)\n", title.Title, strings.Join(authors, ", "), len(clippings))
+	}
+
+	err = db.DB.Close()
+	if err != nil {
+		t.Fatalf("Error closing db: %v", err)
+	}
+	err = os.Remove(testDb)
+	if err != nil {
+		t.Logf("Error remove test db: %v", err)
 	}
 }
