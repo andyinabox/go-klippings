@@ -35,26 +35,37 @@ func (db *Database) ProcessParseData(data *[]parser.Data) error {
 	return nil
 }
 
-func (db *Database) ProcessParseDataSingle(d *parser.Data) error {
-	log.Println("ProcessParseDataSingle not implemented yet")
+func (db *Database) ProcessParseDataSingle(d *parser.Data) (bool, error) {
 
-	var c Clipping
-	var t Title
-	var authors []Author
+	// var c Clipping
+	// var t Title
+	// var authors []Author
 
-	db.DB.FirstOrInit(&c, Clipping{
-		ID: d.SourceChecksum,
-	})
+	var count int
+	db.DB.Model(&Clipping{}).Where("id = ?", d.SourceChecksum).Count(&count)
 
-	db.DB.FirstOrInit(&t, Title{
-		ID: d.TitleChecksum,
-	})
-
-	for _, id := range d.Authors {
-		var a Author
-		db.DB.FirstOrInit(&a, id)
-		authors = append(authors, a)
+	// if the clipping already exists we can skip it
+	if count > 0 {
+		return false, nil
 	}
+
+	// db.DB.First(&c, d.SourceChecksum)
+
+	log.Printf("%v records found\n", count)
+
+	// for name, id := range d.Authors {
+	// 	var a Author
+	// 	db.DB.FirstOrInit(&a, id)
+	// 	a.Name = name
+	// 	a.SourceName = name
+	// 	authors = append(authors, a)
+	// }
+
+	// db.DB.FirstOrInit(&t, Title{
+	// 	ID: d.TitleChecksum,
+	// })
+
+	// db.Model(&Title).Association("Clippings").Apppend(&c)
 
 	// c := Clipping{
 	// 	ID:                 d.SourceChecksum,
@@ -86,7 +97,7 @@ func (db *Database) ProcessParseDataSingle(d *parser.Data) error {
 	// 	SourceTitle: d.Title,
 	// }
 
-	return nil
+	return true, nil
 }
 
 // func CheckTitle
