@@ -7,10 +7,10 @@ import (
 // Clipping encapsulates data for a single kindle clipping
 type Title struct {
 	gorm.Model
-	Title     string
-	Clippings []*Clipping
-	Authors   []*Author `gorm:"many2many:title_authors;"`
-	RawTitle  string
+	Title       string
+	Clippings   []*Clipping
+	Authors     []*Author `gorm:"many2many:title_authors;"`
+	SourceTitle string
 }
 
 // Create a new clipping
