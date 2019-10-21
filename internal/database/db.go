@@ -4,6 +4,7 @@ import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
 	"github.com/andyinabox/go-klippings-api/pkg/types"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"log"
 )
 

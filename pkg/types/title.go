@@ -1,16 +1,19 @@
 package types
 
 import (
-	"github.com/jinzhu/gorm"
+	"time"
 )
 
 // Clipping encapsulates data for a single kindle clipping
 type Title struct {
-	gorm.Model
+	ID          uint32 `gorm:"primary_key"`
 	Title       string
 	Clippings   []*Clipping
 	Authors     []*Author `gorm:"many2many:title_authors;"`
 	SourceTitle string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time
 }
 
 // Create a new clipping
