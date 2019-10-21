@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/andyinabox/go-klippings-api/internal/database"
+	"github.com/andyinabox/go-klippings-api/pkg/types"
 )
 
 var db *database.Database
@@ -20,9 +21,9 @@ func Create(r *gin.Engine, d *database.Database) error {
 	router.GET("/ping", ping)
 
 	// Clippings
-	router.GET("/clippings/", getClippings)
-	router.GET("/clippings/:id", getClipping)
-	router.PUT("/clippings/:id", updateClipping)
+	// router.GET("/clippings/", getClippings)
+	// router.GET("/clippings/:id", getClipping)
+	// router.PUT("/clippings/:id", updateClipping)
 
 	// Authors
 	// router.GET("/authors/", getAuthors)
@@ -30,7 +31,7 @@ func Create(r *gin.Engine, d *database.Database) error {
 	// router.PUT("/authors/:id", updateAuthor)
 
 	// Titles
-	// router.GET("/titles/", getTitles)
+	router.GET("/titles/", getTitles)
 	// router.GET("/titles/:id", getTitle)
 	// router.PUT("/titles/:id", updateTitle)
 
@@ -40,27 +41,34 @@ func Create(r *gin.Engine, d *database.Database) error {
 	return nil
 }
 
-func getClippings(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "No clippings yet",
-	})
+func getTitles(c *gin.Context) {
+	var titles []types.Title
+	_ = db.GetAllTitles(&titles)
+
+	c.JSON(http.StatusOK, titles)
 }
 
-func getClipping(c *gin.Context) {
-	id := c.Params.ByName("id")
+// func getClippings(c *gin.Context) {
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"message": "No clippings yet",
+// 	})
+// }
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("No clippings yet: %v", id),
-	})
-}
+// func getClipping(c *gin.Context) {
+// 	id := c.Params.ByName("id")
 
-func updateClipping(c *gin.Context) {
-	id := c.Params.ByName("id")
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"message": fmt.Sprintf("No clippings yet: %v", id),
+// 	})
+// }
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("No clippings yet: %v", id),
-	})
-}
+// func updateClipping(c *gin.Context) {
+// 	id := c.Params.ByName("id")
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"message": fmt.Sprintf("No clippings yet: %v", id),
+// 	})
+// }
 
 func ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

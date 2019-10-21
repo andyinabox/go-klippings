@@ -17,7 +17,7 @@ func DataDir() (string, error) {
 
 	// make data dir if it doesn't already exist
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		err = os.MkdirAll(dataDir, os.ModeDir)
+		err = os.MkdirAll(dataDir, 0777)
 		if err != nil {
 			return "", err
 		}

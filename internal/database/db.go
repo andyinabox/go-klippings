@@ -108,9 +108,3 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 	}
 	return false, nil
 }
-
-// func CheckTitle
-
-// func CheckAuthor
-
-// func CheckClipping

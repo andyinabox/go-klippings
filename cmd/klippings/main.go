@@ -32,7 +32,7 @@ func main() {
 	// create router
 	router := gin.Default()
 	// router.MaxMultipartMemory = 8 << 20 // 8 MiB
-	router.Static("/", "./public")
+	router.Static("/public/", "./public")
 
 	// open db
 	log.Println("Opening database")
