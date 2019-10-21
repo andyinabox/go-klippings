@@ -25,8 +25,12 @@ func Open(fp string) (*Database, error) {
 	return &Database{db}, nil
 }
 
-func (d *Database) GetAllTitles(t *[]Title) error {
-	d.DB.Preload("Clippings").Preload("Authors").Find(t)
+func (d *Database) GetAllTitles(t *[]Title, deep bool) error {
+	if deep {
+		d.DB.Preload("Clippings").Preload("Authors").Find(t)
+	} else {
+		d.DB.Find(t)
+	}
 	return nil
 }
 

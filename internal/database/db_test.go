@@ -49,7 +49,7 @@ func TestProcessParseData(t *testing.T) {
 	}
 
 	var titles []types.Title
-	err = db.GetAllTitles(&titles)
+	err = db.GetAllTitles(&titles, true)
 	if err != nil {
 		t.Fatalf("Error retrieving titles: %v", err)
 	}

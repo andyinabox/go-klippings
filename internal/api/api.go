@@ -44,7 +44,7 @@ func Create(r *gin.Engine, d *database.Database) error {
 
 func getTitles(c *gin.Context) {
 	var titles []types.Title
-	_ = db.GetAllTitles(&titles)
+	_ = db.GetAllTitles(&titles, true)
 
 	c.JSON(http.StatusOK, titles)
 }
