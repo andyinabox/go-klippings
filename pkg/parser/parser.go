@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	. "github.com/andyinabox/go-klippings-api/pkg/types"
+	"hash/crc32"
 	"io"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,31 +20,47 @@ const (
 	TimeFormat       = "Monday, January 2, 2006 3:04:05 PM"
 )
 
-// first line regular expression
-var l1re = regexp.MustCompile(FirstLineRegExp)
+type Data struct {
+	Title         string
+	Authors       string
+	Content       string
+	LocationRange [2]uint32
+	PageRange     [2]uint32
+	Type          string
+	Date          time.Time
+	Source        string
+	Checksum      uint32
+}
 
-// second line regular expression
+// regular expressions
+var l1re = regexp.MustCompile(FirstLineRegExp)
 var l2re = regexp.MustCompile(SecondLineRegExp)
 
-func Parse(r io.Reader) ([]Clipping, error) {
-	var clippings []Clipping
+func Parse(r io.Reader) ([]Data, error) {
+	var data []Data
 
 	scanner := bufio.NewScanner(r)
-	scanner.Split(scanClippings)
+	scanner.Split(ScanClippings)
 
 	for scanner.Scan() {
-		c, err := parseChunk(scanner.Bytes())
+		d, err := ParseChunk(scanner.Bytes())
 		if err == nil {
-			clippings = append(clippings, c)
+			data = append(data, d)
+		} else {
+			log.Printf("Error parsing chunk, %v\n", err)
 		}
 	}
 
-	return clippings, nil
+	return data, nil
 }
 
-func parseChunk(b []byte) (Clipping, error) {
-	var lines []string
-	var clipping Clipping
+func ParseChunk(b []byte) (Data, error) {
+	var lines [][]byte
+
+	var d = Data{
+		Source:   string(b),
+		Checksum: crc32.ChecksumIEEE(b),
+	}
 
 	// create scanner for chunk bytes
 	scanner := bufio.NewScanner(bytes.NewReader(b))
@@ -52,79 +69,74 @@ func parseChunk(b []byte) (Clipping, error) {
 	// scan through lines, ignoring empty ones
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		if len(dropCR(line)) > 0 {
-			lines = append(lines, string(dropCR(line)))
+		if len(line) > 0 {
+			lines = append(lines, line)
 		}
 	}
 
 	// if there's less than 2 lines, we don't have enough
 	if len(lines) < 2 {
-		return clipping, errors.New("Not a complete clipping")
-	}
-
-	// create a new clipping struct
-	clipping = Clipping{
-		Raw: string(b),
+		return d, errors.New("Not a complete clipping")
 	}
 
 	// anything after the first two lines is part
 	// of the clipping content
 	if len(lines) > 2 {
-		clipping.RawContent = strings.Join(lines[2:], " ")
+		d.Content = string(bytes.Join(lines[2:], []byte(" ")))
 	}
 
 	// match data for first line
-	l1 := l1re.FindStringSubmatch(lines[0])
+	l1 := l1re.FindSubmatch(lines[0])
 	if l1 != nil {
 		// title
-		clipping.RawTitle = l1[1]
+		d.Title = string(l1[1])
 		// authors
-		clipping.RawAuthors = l1[2]
+		d.Authors = string(l1[2])
 	}
 
 	// match data for second line
-	l2 := l2re.FindStringSubmatch(lines[1])
+	l2 := l2re.FindSubmatch(lines[1])
 	if l2 != nil {
-		clipping.Type = l2[1]
+		d.Type = string(l2[1])
 
-		clipping.PageRangeStart, clipping.PageRangeEnd = parseRange(l2[2])
-		clipping.LocationRangeStart, clipping.LocationRangeEnd = parseRange(l2[3])
+		d.PageRange = parseRange(l2[2])
+		d.LocationRange = parseRange(l2[3])
 
-		if t, err := time.Parse(TimeFormat, l2[4]); err == nil {
-			clipping.Date = t
+		if t, err := time.Parse(TimeFormat, string(l2[4])); err == nil {
+			d.Date = t
 		}
 	}
 
-	return clipping, nil
+	return d, nil
 }
 
-func parseRange(r string) (num1 uint, num2 uint) {
-	var n1 uint
-	var n2 uint
+func parseRange(b []byte) (r [2]uint32) {
+	var a [2]uint32
 
-	if r == "" {
-		return n1, n2
+	if b == nil {
+		return a
 	}
 
-	a := strings.Split(r, "-")
+	// convert to array of strings
+	s := strings.Split(string(b), "-")
 
-	if len(a) > 0 {
+	if len(s) > 0 {
 		// first part of range
-		if n, err := strconv.Atoi(a[0]); err == nil {
-			n1 = uint(n)
+		if n, err := strconv.Atoi(s[0]); err == nil {
+			a[0] = uint32(n)
 		}
 		// second part of range
-		if len(a) > 1 {
-			if n, err := strconv.Atoi(a[1]); err == nil {
-				n2 = uint(n)
+		if len(s) > 1 {
+			if n, err := strconv.Atoi(s[1]); err == nil {
+				a[1] = uint32(n)
 			}
 		}
 	}
 
-	return n1, n2
+	return a
 }
 
-func scanClippings(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func ScanClippings(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
