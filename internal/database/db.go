@@ -2,32 +2,38 @@ package database
 
 import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
-	. "github.com/andyinabox/go-klippings-api/pkg/types"
+	"github.com/andyinabox/go-klippings-api/pkg/types"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/sqlite" // has to be in this file
 	"log"
 	"os"
 )
 
+// Database wraps `gorm.DB` with some additional
+// application-specific functionality
 type Database struct {
 	DB   *gorm.DB
 	File string
 }
 
+// Open opens a database connection to the given
+// database file
 func Open(fp string) (*Database, error) {
 	db, err := gorm.Open("sqlite3", fp)
 	if err != nil {
 		return nil, err
 	}
 
-	db.AutoMigrate(&Clipping{})
-	db.AutoMigrate(&Title{})
-	db.AutoMigrate(&Author{})
+	// auto-migrate models
+	db.AutoMigrate(&types.Clipping{})
+	db.AutoMigrate(&types.Title{})
+	db.AutoMigrate(&types.Author{})
 
 	return &Database{db, fp}, nil
 }
 
-func (d *Database) GetAllTitles(t *[]Title, deep bool) error {
+// GetAllTitles does exaclty what the name says
+func (d *Database) GetAllTitles(t *[]types.Title, deep bool) error {
 	if deep {
 		d.DB.Preload("Clippings").Preload("Authors").Find(t)
 	} else {
@@ -36,10 +42,13 @@ func (d *Database) GetAllTitles(t *[]Title, deep bool) error {
 	return nil
 }
 
+// Close closes the database connection
 func (d *Database) Close() error {
 	return d.DB.Close()
 }
 
+// Destroy closes the database connection
+// **and deletes the database file!**
 func (d *Database) Destroy() error {
 	err := d.DB.Close()
 	if err != nil {
@@ -52,6 +61,8 @@ func (d *Database) Destroy() error {
 	return nil
 }
 
+// ProcessParseData takes results from the parser.Parse and
+// populates the database, being sure to avoid duplicates
 func (d *Database) ProcessParseData(data *[]parser.Data) error {
 	for _, p := range *data {
 		skip, err := d.ProcessParseDataSingle(&p)
@@ -65,13 +76,14 @@ func (d *Database) ProcessParseData(data *[]parser.Data) error {
 	return nil
 }
 
+// ProcessParseDataSingle process an individual parser.Data struct
 func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 
 	var cCount int // count matching clippings in db
 	var tCount int // count matching titles in db
 
-	d.DB.Model(&Clipping{}).Where("id = ?", p.SourceChecksum).Count(&cCount)
-	d.DB.Model(&Title{}).Where("id = ?", p.TitleChecksum).Count(&tCount)
+	d.DB.Model(&types.Clipping{}).Where("id = ?", p.SourceChecksum).Count(&cCount)
+	d.DB.Model(&types.Title{}).Where("id = ?", p.TitleChecksum).Count(&tCount)
 
 	// if the clipping already exists we can skip it
 	if cCount > 0 {
@@ -79,7 +91,7 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 	}
 
 	// otherwise we can create a new clipping
-	c := Clipping{
+	c := types.Clipping{
 		ID:                 p.SourceChecksum,
 		LocationRangeStart: p.LocationRange[0],
 		LocationRangeEnd:   p.LocationRange[1],
@@ -94,8 +106,8 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 	d.DB.Create(&c)
 
 	// Now we'll create or init our title
-	var t Title
-	d.DB.FirstOrInit(&t, Title{
+	var t types.Title
+	d.DB.FirstOrInit(&t, types.Title{
 		ID:          p.TitleChecksum,
 		SourceTitle: p.Title,
 	})
@@ -112,9 +124,9 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 	// we should really only need to add
 	// authors once per title
 	if tCount == 0 {
-		authors := make([]Author, 0)
+		authors := make([]types.Author, 0)
 		for name, id := range p.Authors {
-			a := Author{
+			a := types.Author{
 				ID:         id,
 				Name:       name,
 				SourceName: name,

@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-func TestExecutionDir(t *testing.T) {
-	path, err := ExecutionDir()
-	if err != nil {
-		t.Fatalf("Error getting extecution dir: %v", err)
-	}
-	t.Logf(path)
-}
+// func TestExecutionDir(t *testing.T) {
+// 	path, err := ExecutionDir()
+// 	if err != nil {
+// 		t.Fatalf("Error getting extecution dir: %v", err)
+// 	}
+// 	t.Logf(path)
+// }
 
 func TestDataDir(t *testing.T) {
 	dataDir, err := DataDir()
@@ -23,10 +23,6 @@ func TestDataDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-}
-
-func TestLoadDotEnv(t *testing.T) {
-	LoadDotEnv()
 }
 
 func TestCreateTestDb(t *testing.T) {

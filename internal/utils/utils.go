@@ -4,19 +4,18 @@ import (
 	"github.com/andyinabox/go-klippings-api/internal/database"
 	"os"
 	"path"
-	"path/filepath"
 )
 
 const DataDirName = ".klippings"
 
-func ExecutionDir() (string, error) {
-	ex, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	exPath := filepath.Dir(ex)
-	return exPath, nil
-}
+// func ExecutionDir() (string, error) {
+// 	ex, err := os.Executable()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	exPath := filepath.Dir(ex)
+// 	return exPath, nil
+// }
 
 // DataDir creates a dir for application data
 // and returns the string path

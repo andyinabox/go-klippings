@@ -20,6 +20,8 @@ const (
 	TimeFormat       = "Monday, January 2, 2006 3:04:05 PM"
 )
 
+// Data is an intermediate format containing data
+// parsed from a raw kindle clippings file
 type Data struct {
 	Title           string
 	TitleChecksum   uint32
@@ -38,6 +40,8 @@ type Data struct {
 var l1re = regexp.MustCompile(FirstLineRegExp)
 var l2re = regexp.MustCompile(SecondLineRegExp)
 
+// Parse will take raw text from a Kindle `My Clippings.txt` file
+// and convert it into an array of `Data` structs, which
 func Parse(r io.Reader) ([]Data, error) {
 	var data []Data
 
@@ -45,7 +49,7 @@ func Parse(r io.Reader) ([]Data, error) {
 	scanner.Split(ScanClippings)
 
 	for scanner.Scan() {
-		d, err := ParseChunk(scanner.Bytes())
+		d, err := parseChunk(scanner.Bytes())
 		if err == nil {
 			data = append(data, d)
 		} else {
@@ -75,7 +79,8 @@ func parseAuthors(b []byte) (map[string]uint32, error) {
 	return m, nil
 }
 
-func ParseChunk(b []byte) (Data, error) {
+// parseChunk parses an individual chunk of clippings data
+func parseChunk(b []byte) (Data, error) {
 	var lines [][]byte
 
 	var d = Data{
@@ -163,6 +168,7 @@ func parseRange(b []byte) [2]uint32 {
 	return a
 }
 
+// ScanClippings is scanner function used to parse a Kindle clippings file
 func ScanClippings(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 	if atEOF && len(data) == 0 {
