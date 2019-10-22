@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// Clipping encapsulates data for a single kindle clipping
+// Author encapsulates data for a single author
 type Author struct {
-	ID         uint32 `gorm:"primary_key"`
-	Name       string
-	SourceName string
-	Titles     []*Title `gorm:"many2many:title_authors;"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DeletedAt  *time.Time
+	ID         uint32     `gorm:"primary_key" json:"id"`
+	Name       string     `json:"name"`
+	SourceName string     `json:"source_name"`
+	Titles     []*Title   `gorm:"many2many:title_authors;" json:"titles"`
+	CreatedAt  time.Time  `json:"-"`
+	UpdatedAt  time.Time  `json:"-"`
+	DeletedAt  *time.Time `json:"-"`
 }
 
 // Create a new clipping

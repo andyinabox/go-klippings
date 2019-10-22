@@ -14,19 +14,19 @@ import (
 
 // Clipping encapsulates data for a single kindle clipping
 type Clipping struct {
-	ID                 uint32 `gorm:"primary_key"`
-	TitleID            uint32
-	Title              Title
-	LocationRangeStart uint32
-	LocationRangeEnd   uint32
-	PageRangeStart     uint32
-	PageRangeEnd       uint32
-	Type               string
-	Date               time.Time
-	Content            string
-	SourceContent      string
-	Source             string
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	DeletedAt          *time.Time
+	ID                 uint32     `gorm:"primary_key" json:"id"`
+	TitleID            uint32     `json:"-"`
+	Title              Title      `json:"title"`
+	LocationRangeStart uint32     `json:"location_start"`
+	LocationRangeEnd   uint32     `json:"location_end"`
+	PageRangeStart     uint32     `json:"page_start"`
+	PageRangeEnd       uint32     `json:"page_end"`
+	Type               string     `json:"type"`
+	Date               time.Time  `json:"date"`
+	Content            string     `json:"content"`
+	SourceContent      string     `json:"source_content"`
+	Source             string     `json:"-"`
+	CreatedAt          time.Time  `json:"-"`
+	UpdatedAt          time.Time  `json:"-"`
+	DeletedAt          *time.Time `json:"-"`
 }

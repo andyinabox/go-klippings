@@ -4,16 +4,16 @@ import (
 	"time"
 )
 
-// Clipping encapsulates data for a single kindle clipping
+// Title encapsulates data for a single title
 type Title struct {
-	ID          uint32 `gorm:"primary_key"`
-	Title       string
-	Clippings   []*Clipping
-	Authors     []*Author `gorm:"many2many:title_authors;"`
-	SourceTitle string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
+	ID          uint32      `gorm:"primary_key" json:"id"`
+	Title       string      `json:"title"`
+	Clippings   []*Clipping `json:"clippings"`
+	Authors     []*Author   `gorm:"many2many:title_authors" json:"authors"`
+	SourceTitle string      `json:"source_title"`
+	CreatedAt   time.Time   `json:"-"`
+	UpdatedAt   time.Time   `json:"-"`
+	DeletedAt   *time.Time  `json:"-"`
 }
 
 // Create a new clipping
