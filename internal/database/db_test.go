@@ -3,6 +3,7 @@ package database
 import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
 	"github.com/andyinabox/go-klippings-api/pkg/types"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
@@ -43,10 +44,12 @@ func TestProcessParseData(t *testing.T) {
 		t.Fatalf("Error opening db: %v", err)
 	}
 
-	err = db.ProcessParseData(&data)
+	result, err := db.ProcessParseData(&data)
 	if err != nil {
 		t.Fatalf("Error processing parsed data: %v", err)
 	}
+
+	// t.Logf("ProcessParseData result: %#v\n", result)
 
 	var titles []types.Title
 	err = db.GetAllTitles(&titles, true)
@@ -56,6 +59,7 @@ func TestProcessParseData(t *testing.T) {
 	if len(titles) < 1 {
 		t.Fatal("No titles returned")
 	}
+	assert.Equal(t, len(titles), len(result.Titles))
 
 	t.Log("Found titles:")
 	for _, title := range titles {
@@ -83,7 +87,7 @@ func TestProcessParseData(t *testing.T) {
 	}
 }
 
-func TestDiplicates(t *testing.T) {
+func TestDuplicates(t *testing.T) {
 	f, err := os.Open(testDataFile)
 	if err != nil {
 		t.Fatalf("Error opening clippings file: %v", err)
@@ -100,25 +104,44 @@ func TestDiplicates(t *testing.T) {
 		t.Fatalf("Error opening db: %v", err)
 	}
 
-	err = db.ProcessParseData(&data)
+	_, err = db.ProcessParseData(&data)
 	if err != nil {
 		t.Fatalf("Error processing parsed data: %v", err)
 	}
 
-	var initialCount int
-	var secondCount int
+	// t.Logf("ProcessParseData result: %#v\n", result)
 
-	db.DB.Model(&types.Clipping{}).Count(&initialCount)
+	var initialClippingsCount int
+	var initialTitlesCount int
+	var initialAuthorsCount int
 
-	err = db.ProcessParseData(&data)
+	var secondClippingsCount int
+	var secondTitlesCount int
+	var secondAuthorsCount int
+
+	db.DB.Model(&types.Clipping{}).Count(&initialClippingsCount)
+	db.DB.Model(&types.Title{}).Count(&initialTitlesCount)
+	db.DB.Model(&types.Title{}).Count(&initialAuthorsCount)
+
+	_, err = db.ProcessParseData(&data)
 	if err != nil {
 		t.Fatalf("Error processing parsed data a second time: %v", err)
 	}
 
-	db.DB.Model(&types.Clipping{}).Count(&secondCount)
+	// t.Logf("ProcessParseData result: %#v\n", result)
 
-	if initialCount != secondCount {
-		t.Fatalf("Expected %v clippings after second upload, found %v", initialCount, secondCount)
+	db.DB.Model(&types.Clipping{}).Count(&secondClippingsCount)
+	db.DB.Model(&types.Title{}).Count(&secondTitlesCount)
+	db.DB.Model(&types.Title{}).Count(&secondAuthorsCount)
+
+	if initialClippingsCount != secondClippingsCount {
+		t.Fatalf("Expected %v clippings after second upload, found %v", initialClippingsCount, secondClippingsCount)
+	}
+	if initialTitlesCount != secondTitlesCount {
+		t.Fatalf("Expected %v titles after second upload, found %v", initialTitlesCount, secondTitlesCount)
+	}
+	if initialAuthorsCount != secondAuthorsCount {
+		t.Fatalf("Expected %v authors after second upload, found %v", initialAuthorsCount, secondAuthorsCount)
 	}
 
 	err = db.DB.Close()

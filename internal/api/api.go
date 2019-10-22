@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"path/filepath"
+	// "path/filepath"
 
 	"github.com/andyinabox/go-klippings-api/internal/database"
+	"github.com/andyinabox/go-klippings-api/pkg/parser"
 	"github.com/andyinabox/go-klippings-api/pkg/types"
 )
 
@@ -25,7 +26,7 @@ func Create(r *gin.Engine, d *database.Database) error {
 
 	// Clippings
 	router.GET("/clippings", getClippings)
-	// router.POST("/clippings/", uploadClippings)
+	router.POST("/clippings", uploadClippings)
 
 	// Authors
 	router.GET("/authors", getAuthors)
@@ -61,24 +62,48 @@ func getAuthors(c *gin.Context) {
 }
 
 func uploadClippings(c *gin.Context) {
-	file, err := c.FormFile("file")
+	fh, err := c.FormFile("file")
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("get form err: %v", err.Error()),
+			"message": fmt.Sprintf("form err: %v", err.Error()),
 		})
 		return
 	}
 
-	filename := filepath.Base(file.Filename)
-	if err := c.SaveUploadedFile(file, filename); err != nil {
+	f, err := fh.Open()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("upload file err: %v", err.Error()),
+			"message": fmt.Sprintf("form err: %v", err.Error()),
 		})
 		return
 	}
+
+	data, err := parser.Parse(f)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": fmt.Sprintf("parse err: %v", err.Error()),
+		})
+		return
+	}
+
+	result, err := db.ProcessParseData(&data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": fmt.Sprintf("db err: %v", err.Error()),
+		})
+		return
+	}
+	// filename := filepath.Base(file.Filename)
+	// if err := c.SaveUploadedFile(file, filename); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": fmt.Sprintf("upload file err: %v", err.Error()),
+	// 	})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("File %s uploaded successfully", file.Filename),
+		"message": fmt.Sprintf("File %s uploaded successfully", fh.Filename),
+		"records": result,
 	})
 }

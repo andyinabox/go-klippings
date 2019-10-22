@@ -8,9 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	// "github.com/joho/godotenv"
 	// "fmt"
+	"bytes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -81,7 +84,7 @@ func TestBasicTypes(t *testing.T) {
 	data, err := parser.Parse(f)
 	assert.Nil(t, err)
 
-	err = db.ProcessParseData(&data)
+	_, err = db.ProcessParseData(&data)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -133,4 +136,41 @@ func TestBasicTypes(t *testing.T) {
 	for i, o := range authors {
 		t.Logf("%d: %s\n", i, o.Name)
 	}
+}
+
+func TestUpload(t *testing.T) {
+	router, db, err := createAPI()
+	defer db.Destroy()
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	f, err := os.Open("../../test/data/my_clippings.txt")
+	assert.Nil(t, err)
+
+	var b bytes.Buffer
+	mw := multipart.NewWriter(&b)
+	fw, err := mw.CreateFormFile("file", "../../test/data/my_clippings.txt")
+	assert.Nil(t, err)
+
+	io.Copy(fw, f)
+	mw.Close()
+
+	req, err := http.NewRequest("POST", "/api/clippings", &b)
+	assert.Nil(t, err)
+
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	j, err := ioutil.ReadAll(w.Result().Body)
+	assert.Nil(t, err)
+
+	// var result database.DataImportResult
+	// err = json.Unmarshal(j, &result)
+	// assert.Nil(t, err)
+
+	t.Logf("Result: %#v", string(j))
+
 }

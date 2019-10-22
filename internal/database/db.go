@@ -16,6 +16,14 @@ type Database struct {
 	File string
 }
 
+// DataImportResult is used to communicate which records
+// were imported
+type DataImportResult struct {
+	Clippings []*types.Clipping
+	Authors   []*types.Author
+	Titles    []*types.Title
+}
+
 // Open opens a database connection to the given
 // database file
 func Open(fp string) (*Database, error) {
@@ -63,21 +71,27 @@ func (d *Database) Destroy() error {
 
 // ProcessParseData takes results from the parser.Parse and
 // populates the database, being sure to avoid duplicates
-func (d *Database) ProcessParseData(data *[]parser.Data) error {
+func (d *Database) ProcessParseData(data *[]parser.Data) (*DataImportResult, error) {
+	r := &DataImportResult{
+		Clippings: make([]*types.Clipping, 0),
+		Authors:   make([]*types.Author, 0),
+		Titles:    make([]*types.Title, 0),
+	}
+
 	for _, p := range *data {
-		skip, err := d.ProcessParseDataSingle(&p)
+		skip, err := d.ProcessParseDataSingle(&p, r)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if skip {
 			log.Printf("Skipped clipping %v, already exists", p.SourceChecksum)
 		}
 	}
-	return nil
+	return r, nil
 }
 
 // ProcessParseDataSingle process an individual parser.Data struct
-func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
+func (d *Database) ProcessParseDataSingle(p *parser.Data, r *DataImportResult) (bool, error) {
 
 	var cCount int // count matching clippings in db
 	var tCount int // count matching titles in db
@@ -104,15 +118,18 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 		Source:             p.Source,
 	}
 	d.DB.Create(&c)
+	r.Clippings = append(r.Clippings, &c)
 
 	// Now we'll create or init our title
 	var t types.Title
-	d.DB.FirstOrInit(&t, types.Title{
-		ID:          p.TitleChecksum,
-		SourceTitle: p.Title,
+	d.DB.FirstOrInit(&t, &types.Title{
+		ID: p.TitleChecksum,
 	})
 	// if it's new we'll set the title
 	// from source
+	if t.SourceTitle == "" {
+		t.SourceTitle = p.Title
+	}
 	if t.Title == "" {
 		t.Title = p.Title
 	}
@@ -124,21 +141,22 @@ func (d *Database) ProcessParseDataSingle(p *parser.Data) (bool, error) {
 	// we should really only need to add
 	// authors once per title
 	if tCount == 0 {
-		authors := make([]types.Author, 0)
+		r.Titles = append(r.Titles, &t)
+		authors := make([]*types.Author, 0)
 		for name, id := range p.Authors {
-			a := types.Author{
+			a := &types.Author{
 				ID:         id,
 				Name:       name,
 				SourceName: name,
 			}
-			d.DB.Create(&a)
+			d.DB.Create(a)
 			authors = append(authors, a)
+			r.Authors = append(r.Authors, a)
 		}
 
 		if len(authors) > 0 {
 			d.DB.Model(&t).Association("Authors").Append(&authors)
 		}
-
 	}
 	return false, nil
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/andyinabox/go-klippings-api/internal/api"
 	"github.com/andyinabox/go-klippings-api/internal/database"
 	"github.com/andyinabox/go-klippings-api/internal/utils"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
@@ -34,6 +35,10 @@ func main() {
 	router := gin.Default()
 	// router.MaxMultipartMemory = 8 << 20 // 8 MiB
 	// router.Static("/public/", "./public")
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+	}))
 
 	// open db
 	log.Println("Opening database")
