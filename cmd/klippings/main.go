@@ -20,6 +20,10 @@ const DbFileName = "klippings.db"
 
 var dbFile string
 
+func startServer(r *gin.Engine) {
+	r.Run(os.Getenv("PORT"))
+}
+
 func main() {
 
 	// get settings from `.env` file
@@ -63,17 +67,18 @@ func main() {
 
 	router.Static("/home", "./web/dist/")
 
-	go func() {
-		router.Run(os.Getenv("PORT"))
-	}()
-
 	if *launchGuiPtr {
+
+		go startServer(router)
+
 		log.Println("Launching GUI mode")
 		url := fmt.Sprintf("http://localhost%s/home", os.Getenv("PORT"))
 		err = webview.Open("Klippings", url, 600, 800, true)
 		if err != nil {
 			log.Fatalf("Could not launch gui: %v", err)
 		}
+	} else {
+		startServer(router)
 	}
 
 }
