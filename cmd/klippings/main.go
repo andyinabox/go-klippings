@@ -1,12 +1,15 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/andyinabox/go-klippings-api/internal/api"
 	"github.com/andyinabox/go-klippings-api/internal/database"
 	"github.com/andyinabox/go-klippings-api/internal/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/zserge/webview"
 	"log"
 	"os"
 	"path"
@@ -25,6 +28,10 @@ func main() {
 		log.Fatalf("Error loading .env file %v", err)
 	}
 
+	// setup flags
+	launchGuiPtr := flag.Bool("gui", false, "Run app in experimental GUI")
+	flag.Parse()
+
 	// get data dir
 	dataDir, err := utils.DataDir()
 	if err != nil {
@@ -34,7 +41,6 @@ func main() {
 	// create router
 	router := gin.Default()
 	// router.MaxMultipartMemory = 8 << 20 // 8 MiB
-	// router.Static("/public/", "./public")
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
@@ -55,5 +61,19 @@ func main() {
 		log.Fatalf("Failed to create API: %v", err)
 	}
 
-	router.Run(os.Getenv("PORT"))
+	router.Static("/home", "./web/dist/")
+
+	go func() {
+		router.Run(os.Getenv("PORT"))
+	}()
+
+	if *launchGuiPtr {
+		log.Println("Launching GUI mode")
+		url := fmt.Sprintf("http://localhost%s/home", os.Getenv("PORT"))
+		err = webview.Open("Klippings", url, 600, 800, true)
+		if err != nil {
+			log.Fatalf("Could not launch gui: %v", err)
+		}
+	}
+
 }
