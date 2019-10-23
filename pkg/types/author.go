@@ -10,7 +10,7 @@ type Author struct {
 	ID         uint32     `gorm:"primary_key" json:"id"`
 	Name       string     `json:"name"`
 	SourceName string     `json:"source_name"`
-	Titles     []*Title   `gorm:"many2many:title_authors;" json:"titles"`
+	Titles     []*Title   `gorm:"many2many:title_authors;" json:"titles,omitempty"`
 	CreatedAt  time.Time  `json:"-"`
 	UpdatedAt  time.Time  `json:"-"`
 	DeletedAt  *time.Time `json:"-"`

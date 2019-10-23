@@ -46,10 +46,6 @@ func createAPI() (*gin.Engine, *database.Database, error) {
 	return router, db, nil
 }
 
-func TestSanity(t *testing.T) {
-	t.Log("You appear to be sane")
-}
-
 func TestCreateAPI(t *testing.T) {
 	_, db, err := createAPI()
 	defer db.Destroy()

@@ -16,7 +16,7 @@ import (
 type Clipping struct {
 	ID                 uint32     `gorm:"primary_key" json:"id"`
 	TitleID            uint32     `json:"-"`
-	Title              Title      `json:"title"`
+	Title              *Title     `json:"title"`
 	LocationRangeStart uint32     `json:"location_start"`
 	LocationRangeEnd   uint32     `json:"location_end"`
 	PageRangeStart     uint32     `json:"page_start"`

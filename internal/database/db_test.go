@@ -4,117 +4,82 @@ import (
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
 	"github.com/andyinabox/go-klippings-api/pkg/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
-	"strings"
 	"testing"
 )
 
 const testDb = "../../test/tmp/test.db"
 const testDataFile = "../../test/data/my_clippings.txt"
 
-func TestOpen(t *testing.T) {
-	db, err := Open(testDb)
-	if err != nil {
-		t.Fatalf("Error opening db: %v", err)
-	}
-	err = db.DB.Close()
-	if err != nil {
-		t.Fatalf("Error closing db: %v", err)
-	}
-	err = os.Remove(testDb)
-	if err != nil {
-		t.Logf("Error remove test db: %v", err)
-	}
-}
-
-func TestProcessParseData(t *testing.T) {
+func createTestDB() (*Database, error) {
 	f, err := os.Open(testDataFile)
 	if err != nil {
-		t.Fatalf("Error opening clippings file: %v", err)
+		return nil, err
 	}
 	defer f.Close()
 
 	data, err := parser.Parse(f)
 	if err != nil {
-		t.Fatalf("Error parsing data: %v", err)
+		return nil, err
 	}
 
 	db, err := Open(testDb)
 	if err != nil {
-		t.Fatalf("Error opening db: %v", err)
-	}
-
-	result, err := db.ProcessParseData(&data)
-	if err != nil {
-		t.Fatalf("Error processing parsed data: %v", err)
-	}
-
-	// t.Logf("ProcessParseData result: %#v\n", result)
-
-	var titles []types.Title
-	err = db.GetAllTitles(&titles, true)
-	if err != nil {
-		t.Fatalf("Error retrieving titles: %v", err)
-	}
-	if len(titles) < 1 {
-		t.Fatal("No titles returned")
-	}
-	assert.Equal(t, len(titles), len(result.Titles))
-
-	t.Log("Found titles:")
-	for _, title := range titles {
-
-		// gather authors
-		aList := title.Authors
-		authors := make([]string, len(aList))
-		for i, a := range aList {
-			authors[i] = a.Name
-		}
-
-		// gather clippings
-		clippings := title.Clippings
-
-		t.Logf("%s by %s; (%d clippings)\n", title.Title, strings.Join(authors, ", "), len(clippings))
-	}
-
-	err = db.DB.Close()
-	if err != nil {
-		t.Fatalf("Error closing db: %v", err)
-	}
-	err = os.Remove(testDb)
-	if err != nil {
-		t.Logf("Error remove test db: %v", err)
-	}
-}
-
-func TestDuplicates(t *testing.T) {
-	f, err := os.Open(testDataFile)
-	if err != nil {
-		t.Fatalf("Error opening clippings file: %v", err)
-	}
-	defer f.Close()
-
-	data, err := parser.Parse(f)
-	if err != nil {
-		t.Fatalf("Error parsing data: %v", err)
-	}
-
-	db, err := Open(testDb)
-	if err != nil {
-		t.Fatalf("Error opening db: %v", err)
+		return nil, err
 	}
 
 	_, err = db.ProcessParseData(&data)
 	if err != nil {
-		t.Fatalf("Error processing parsed data: %v", err)
+		return nil, err
 	}
 
-	// t.Logf("ProcessParseData result: %#v\n", result)
+	return db, nil
+}
+
+func TestOpen(t *testing.T) {
+	db, err := Open(testDb)
+	require.Nil(t, err)
+
+	err = db.Destroy()
+	assert.Nil(t, err)
+}
+
+func TestProcessParseData(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	db, err := createTestDB()
+	require.Nil(err)
+
+	var titles []types.Title
+	db.DB.Find(&titles)
+	assert.NotEmpty(titles)
+	assert.Equal(len(titles), 3)
+
+	var authors []types.Author
+	db.DB.Find(&authors)
+	assert.NotEmpty(authors)
+	assert.Equal(len(authors), 4)
+
+	var clippings []types.Clipping
+	db.DB.Find(&clippings)
+	assert.NotEmpty(clippings)
+	assert.Equal(len(clippings), 23)
+
+	err = db.Destroy()
+}
+
+func TestDuplicates(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	db, err := createTestDB()
+	require.Nil(err)
 
 	var initialClippingsCount int
 	var initialTitlesCount int
 	var initialAuthorsCount int
-
 	var secondClippingsCount int
 	var secondTitlesCount int
 	var secondAuthorsCount int
@@ -123,33 +88,74 @@ func TestDuplicates(t *testing.T) {
 	db.DB.Model(&types.Title{}).Count(&initialTitlesCount)
 	db.DB.Model(&types.Title{}).Count(&initialAuthorsCount)
 
-	_, err = db.ProcessParseData(&data)
-	if err != nil {
-		t.Fatalf("Error processing parsed data a second time: %v", err)
-	}
+	f, err := os.Open(testDataFile)
+	require.Nil(err)
+	defer f.Close()
+	data, err := parser.Parse(f)
+	require.Nil(err)
+	result, err := db.ProcessParseData(&data)
+	require.Nil(err)
 
-	// t.Logf("ProcessParseData result: %#v\n", result)
+	// result should reflect no updates
+	assert.Empty(result.Clippings)
+	assert.Empty(result.Authors)
+	assert.Empty(result.Titles)
 
 	db.DB.Model(&types.Clipping{}).Count(&secondClippingsCount)
 	db.DB.Model(&types.Title{}).Count(&secondTitlesCount)
 	db.DB.Model(&types.Title{}).Count(&secondAuthorsCount)
 
-	if initialClippingsCount != secondClippingsCount {
-		t.Fatalf("Expected %v clippings after second upload, found %v", initialClippingsCount, secondClippingsCount)
-	}
-	if initialTitlesCount != secondTitlesCount {
-		t.Fatalf("Expected %v titles after second upload, found %v", initialTitlesCount, secondTitlesCount)
-	}
-	if initialAuthorsCount != secondAuthorsCount {
-		t.Fatalf("Expected %v authors after second upload, found %v", initialAuthorsCount, secondAuthorsCount)
-	}
+	assert.Equal(initialClippingsCount, secondClippingsCount)
+	assert.Equal(initialTitlesCount, secondTitlesCount)
+	assert.Equal(initialAuthorsCount, secondAuthorsCount)
 
-	err = db.DB.Close()
-	if err != nil {
-		t.Fatalf("Error closing db: %v", err)
-	}
-	err = os.Remove(testDb)
-	if err != nil {
-		t.Logf("Error remove test db: %v", err)
-	}
+	err = db.Destroy()
 }
+
+// func TestGetTitlesDeep(t *testing.T) {
+// 	db, err := createTestDB()
+// 	require.Nil(t, err)
+
+// 	var titles []types.Title
+// 	db.GetTitlesDeep(&titles)
+
+// 	if assert.NotEqual(t, len(titles), 0, "There should be titles") {
+// 		assert.NotNil(t, titles[0].Authors, "Authors should not be nil")
+// 		assert.NotNil(t, titles[0].Clippings, "Clippings should not be nil")
+// 	}
+
+// 	db.Destroy()
+// }
+
+// func TestGetAuthorsDeep(t *testing.T) {
+// 	db, err := createTestDB()
+// 	require.Nil(t, err)
+
+// 	var authors []types.Author
+// 	db.GetAuthorsDeep(&authors)
+
+// 	if assert.NotEqual(t, len(authors), 0, "There should be authors") {
+// 		if assert.NotNil(t, authors[0].Titles, "Titles should not be nil") {
+// 			assert.NotNil(t, authors[0].Titles[0].Clippings, "Clippings should not be nil")
+// 		}
+// 	}
+
+// 	db.Destroy()
+// }
+
+// func TestGetClippingsDeep(t *testing.T) {
+// 	db, err := createTestDB()
+// 	require.Nil(t, err)
+
+// 	var clippings []types.Clipping
+// 	db.GetClippingsDeep(&clippings)
+
+// 	if assert.NotEqual(t, len(clippings), 0, "There should be clippings") {
+// 		// t.Logf("%#v\n", clippings[0])
+// 		if assert.NotNil(t, clippings[0].Title, "Title should not be nil") {
+// 			assert.NotNil(t, clippings[0].Title.Authors, "Authors should not be nil")
+// 		}
+// 	}
+
+// 	db.Destroy()
+// }

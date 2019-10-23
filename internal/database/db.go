@@ -37,7 +37,9 @@ func Open(fp string) (*Database, error) {
 	db.AutoMigrate(&types.Title{})
 	db.AutoMigrate(&types.Author{})
 
-	return &Database{db, fp}, nil
+	wrapper := Database{db, fp}
+
+	return &wrapper, nil
 }
 
 // GetAllTitles does exaclty what the name says
@@ -50,6 +52,33 @@ func (d *Database) GetAllTitles(t *[]types.Title, deep bool) error {
 	return nil
 }
 
+// GetTitlesDeep retrieves titles with all associations
+// func (d *Database) GetTitlesDeep(t *[]types.Title) {
+// d.DB.Preload("Clippings").Preload("Authors").Find(t)
+// }
+
+// GetAuthorsDeep retrieves authors with all associations
+// func (d *Database) GetAuthorsDeep(a *[]types.Author) {
+// d.DB.Preload("Titles.Clippings").Find(a)
+// for _, author := range *a {
+// 	for _, t := range author.Titles {
+// 		var title types.Title
+// 		d.DB.Preload("Clippings").First(&title, t.ID)
+// 		t.Clippings = title.Clippings
+// 	}
+// }
+// }
+
+// GetClippingsDeep retrieves clippings with all associations
+// func (d *Database) GetClippingsDeep(c *[]types.Clipping) {
+// d.DB.Preload("Title.Authors").Find(c)
+// for _, clip := range *c {
+// 	var title types.Title
+// 	d.DB.Preload("Authors").First(&title, clip.Title.ID)
+// 	clip.Title.Authors = title.Authors
+// }
+// }
+
 // Close closes the database connection
 func (d *Database) Close() error {
 	return d.DB.Close()
@@ -58,7 +87,8 @@ func (d *Database) Close() error {
 // Destroy closes the database connection
 // **and deletes the database file!**
 func (d *Database) Destroy() error {
-	err := d.DB.Close()
+	var err error
+	err = d.DB.Close()
 	if err != nil {
 		return err
 	}

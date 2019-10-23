@@ -8,8 +8,8 @@ import (
 type Title struct {
 	ID          uint32      `gorm:"primary_key" json:"id"`
 	Title       string      `json:"title"`
-	Clippings   []*Clipping `json:"clippings"`
-	Authors     []*Author   `gorm:"many2many:title_authors" json:"authors"`
+	Clippings   []*Clipping `json:"clippings,omitempty"`
+	Authors     []*Author   `gorm:"many2many:title_authors" json:"authors,omitempty"`
 	SourceTitle string      `json:"source_title"`
 	CreatedAt   time.Time   `json:"-"`
 	UpdatedAt   time.Time   `json:"-"`
