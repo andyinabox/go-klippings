@@ -15,6 +15,8 @@ import (
 	"path"
 )
 
+const version = "0.1.0"
+
 // DbFileName file name for database
 const DbFileName = "klippings.db"
 
