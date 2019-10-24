@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -30,11 +31,19 @@ func Create(r *gin.Engine, d *database.Database) error {
 
 	// Authors
 	router.GET("/authors", getAuthors)
+
 	router.GET("/authors/:id", getAuthorsSingle)
+	router.PUT("/authors/:id", noop)
+	router.DELETE("/authors/:id", noop)
 
 	// Titles
 	router.GET("/titles", getTitles)
+
 	router.GET("/titles/:id", getTitlesSingle)
+	router.PUT("/titles/:id", noop)
+	router.DELETE("/titles/:id", noop)
+
+	router.GET("/search", noop)
 
 	return nil
 }
@@ -46,9 +55,71 @@ type SingleQueryResponse struct {
 	Clippings []*types.Clipping `json:"clippings"`
 }
 
+func getClippings(c *gin.Context) {
+	var o types.Clipping
+	getObjectCollection(c, &o)
+}
+
+func getAuthors(c *gin.Context) {
+	var o types.Author
+	getObjectCollection(c, &o)
+}
+
+func getTitles(c *gin.Context) {
+	var o types.Title
+	getObjectCollection(c, &o)
+}
+
+func getObjectCollection(c *gin.Context, o interface{}) {
+
+}
+
+func getObject(o interface{}) func() {
+	return func(c *gin.Context) {
+		// build and execute query from params
+
+		// if there are errors, return 500
+
+		// if no record is found, return 404
+
+		// otherwise return json
+	}
+}
+
+func putObject(o interface{}) func() {
+	return func(c *gin.Context) {
+		// build and execute query
+
+		// if there are errors, return 500
+	}
+}
+
+func deleteObject(o interface{}) func() {
+	return func(c *gin.Context) {
+		// build and execute query based on params
+
+		// if there are errors, return 500
+	}
+}
+
+// 404 response
+func notFound(c *gin.Context) {
+	c.JSON(http.StatusNotFound, H{})
+}
+
+// 500 response
+func serverError(e error) {
+	c.JSON(http.StatusInternalServerError, e)
+}
+
 func getRoot(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Nothin to see here",
+	})
+}
+func noop(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, gin.H{
+		"message": "This section not yet implemented",
 	})
 }
 

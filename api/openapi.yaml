@@ -1,0 +1,573 @@
+openapi: 3.0.0
+info:
+  title: klippings
+  version: "1.0"
+  contact:
+    name: Andy Dayton
+  license: {}
+servers:
+  - url: "http://localhost:8081"
+paths:
+  /clippings:
+    get:
+      summary: Get Clippings collection
+      tags: []
+      description: ""
+      requestBody: {}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Clipping"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: limit
+        - schema:
+            type: integer
+          in: query
+          name: page
+        - schema:
+            type: string
+          in: query
+          name: orderby
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          in: query
+          name: direction
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+    post:
+      summary: Upload clippings file
+      responses:
+        "200":
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clippings:
+                    type: integer
+                  authors:
+                    type: integer
+                  titles:
+                    type: integer
+                required:
+                  - clippings
+                  - authors
+                  - titles
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file_name:
+                  type: binary
+        description: A file upload
+      parameters: []
+      description: "Upload a kindle clippings file. New entries will be added, existing ones will be skipped."
+  "/clippings/{id}":
+    parameters:
+      - type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get single Clipping
+      tags: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clipping"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+    put:
+      summary: Update/Edit clipping
+      tags: []
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Clipping"
+        description: ""
+    delete:
+      summary: Delete clipping
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: destroy
+  /authors:
+    get:
+      summary: Get authors
+      tags: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authors:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Author"
+                required:
+                  - authors
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: limit
+        - schema:
+            type: integer
+          in: query
+          name: page
+        - schema:
+            type: string
+          in: query
+          name: orderby
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          in: query
+          name: direction
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+  "/authors/{id}":
+    get:
+      summary: Get author
+      tags: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: ""
+      requestBody: {}
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+    put:
+      summary: Add/update author
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Author"
+    delete:
+      summary: Delete/destroy author
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody: {}
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: destroy
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+  /titles:
+    get:
+      summary: Get Clippings
+      tags: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  titles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Title"
+                required:
+                  - titles
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: limit
+          description: ""
+        - schema:
+            type: integer
+          in: query
+          name: page
+        - schema:
+            type: string
+          in: query
+          name: orderby
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          in: query
+          name: direction
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+  "/titles/{id}":
+    parameters:
+      - type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get Clippings
+      tags: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Title"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: shallow
+    put:
+      summary: Update/Edit single title
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Title"
+        description: ""
+    delete:
+      summary: ""
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: destroy
+components:
+  schemas:
+    Error:
+      title: Error
+      type: object
+      description: A standard error object.
+      properties:
+        message:
+          type: string
+    TitleShallow:
+      title: Title shallow
+      description: An abridged title record
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        name:
+          type: string
+      required:
+        - id
+        - name
+    Title:
+      title: Title
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        name:
+          type: string
+        clippings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClippingShallow"
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorShallow"
+        name_source:
+          type: string
+      required:
+        - id
+        - name
+        - name_source
+        - clippings
+        - authors
+      description: A book/title
+    ClippingShallow:
+      title: Clippinng shallow
+      type: object
+      description: An abridged version of a clipping request
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        location_type:
+          type: string
+          enum:
+            - page
+            - location
+        location_range:
+          type: array
+          maxItems: 2
+          minItems: 2
+          items:
+            type: integer
+            format: int32
+            minimum: 0
+        type:
+          type: string
+          enum:
+            - bookmark
+            - highlight
+        date:
+          type: string
+          format: date
+        content:
+          type: string
+      required:
+        - id
+        - location_type
+        - location_range
+        - type
+        - date
+        - content     
+    Clipping:
+      title: Clipping
+      type: object
+      x-tags:
+        - Clippings
+      description: A clipping/quote from a book/title
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        location_type:
+          type: string
+          enum:
+            - page
+            - location
+        location_range:
+          type: array
+          maxItems: 2
+          minItems: 2
+          items:
+            type: integer
+            format: int32
+            minimum: 0
+        type:
+          type: string
+          enum:
+            - bookmark
+            - highlight
+        date:
+          type: string
+          format: date
+        content:
+          type: string
+        content_source:
+          type: string
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorShallow"
+        title:
+          $ref: "#/components/schemas/TitleShallow"
+      required:
+        - id
+        - location_type
+        - location_range
+        - type
+        - date
+        - content
+        - content_source
+        - authors
+        - titles
+    AuthorShallow:
+      title: Author shallow
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        name:
+          type: string     
+      required:
+        - id
+        - name 
+    Author: 
+      title: Author
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        name:
+          type: string
+        name_source:
+          type: string
+        titles:
+          type:
+            - array
+          items:
+            $ref: "#/components/schemas/TitleShallow"
+        clippings:
+          type:
+            - array
+          items:
+            $ref: "#/components/schemas/ClippingShallow"
+      required:
+        - id
+        - name
+        - name_source
+        - titles
+        - clippings
+      description: An author of a book/title
+
