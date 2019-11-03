@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/andyinabox/go-klippings-api/internal/api"
-	"github.com/andyinabox/go-klippings-api/internal/database"
-	"github.com/andyinabox/go-klippings-api/internal/utils"
+	"github.com/andyinabox/go-klippings-api/pkg/api"
+	"github.com/andyinabox/go-klippings-api/pkg/database"
+	"github.com/andyinabox/go-klippings-api/pkg/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -15,6 +15,7 @@ import (
 	"path"
 )
 
+// Version is the current version
 const Version = "0.1.0"
 
 // DbFileName file name for database

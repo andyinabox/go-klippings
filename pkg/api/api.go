@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	// "path/filepath"
-	"github.com/andyinabox/go-klippings-api/internal/database"
+	"github.com/andyinabox/go-klippings-api/pkg/database"
 	"github.com/andyinabox/go-klippings-api/pkg/parser"
 	"github.com/andyinabox/go-klippings-api/pkg/types"
 	// "github.com/jinzhu/gorm"
