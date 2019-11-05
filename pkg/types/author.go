@@ -1,21 +1,29 @@
 package types
 
-import (
-	"time"
-)
+import "time"
 
 // Author encapsulates data for a single author
 type Author struct {
-	ID         uint32     `gorm:"primary_key" json:"id"`
+	ID         uint32     `json:"id"`
 	Name       string     `json:"name"`
 	SourceName string     `json:"source_name"`
-	Titles     []*Title   `gorm:"many2many:title_authors;" json:"titles,omitempty"`
+	Titles     []*Title   `json:"titles,omitempty"`
 	CreatedAt  time.Time  `json:"-"`
 	UpdatedAt  time.Time  `json:"-"`
 	DeletedAt  *time.Time `json:"-"`
 }
 
-// Create a new clipping
-func (c *Author) Create() (Author, error) {
-	return Author{}, nil
+// AuthorRepository manages authors collection
+type AuthorRepository interface {
+	Upsert(author *Author) (*Author, error)
+
+	FindOne(ID interface{}) (*Author, error)
+	FindAll() ([]*Author, error)
+
+	Search(term string) ([]*Author, error)
+
+	FindForTitle(t *Title) ([]*Author, error)
+	FindForClipping(c *Clipping) ([]*Author, error)
+
+	DeleteByID(ID interface{}) error
 }

@@ -1,8 +1,6 @@
 package types
 
-import (
-	"time"
-)
+import "time"
 
 // Title encapsulates data for a single title
 type Title struct {
@@ -16,7 +14,17 @@ type Title struct {
 	DeletedAt   *time.Time  `json:"-"`
 }
 
-// Create a new clipping
-func (c *Title) Create() (Title, error) {
-	return Title{}, nil
+// TitleRepository is used for managing titles
+type TitleRepository interface {
+	Upsert(title *Title) (*Title, error)
+
+	FindOne(ID interface{}) (*Title, error)
+	FindAll() ([]*Title, error)
+
+	Search(term string) ([]*Title, error)
+
+	FindForAuthor(a *Author) ([]*Title, error)
+	FindForClipping(c *Clipping) ([]*Title, error)
+
+	DeleteByID(ID interface{}) error
 }

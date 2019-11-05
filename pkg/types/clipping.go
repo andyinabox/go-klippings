@@ -2,14 +2,8 @@ package types
 
 import (
 	"time"
+	"io"
 )
-
-// type ClippingType string
-
-// const (
-// 	BookmarkClippingType  = ClippingType("Bookmark")
-// 	HighlightClippingType = ClippingType("Highlight")
-// )
 
 // Clipping encapsulates data for a single kindle clipping
 type Clipping struct {
@@ -28,4 +22,39 @@ type Clipping struct {
 	CreatedAt          time.Time  `json:"-"`
 	UpdatedAt          time.Time  `json:"-"`
 	DeletedAt          *time.Time `json:"-"`
+}
+
+// ClippingRepository manages the clipping collection
+type ClippingRepository interface {
+	Upsert(clipping *Clipping) (*Clipping, error)
+
+	FindOne(ID interface{}) (*Clipping, error)
+	FindAll() ([]*Clipping, error)
+
+	Search(term string) ([]*Clipping, error)
+
+	FindForTitle(t *Title) ([]*Clipping, error)
+	FindForAuthor(a *Author) ([]*Clipping, error)
+
+	DeleteByID(ID interface{}) error
+}
+
+
+
+// ClippingUploadResult contains information about a clippings
+// file upload
+type ClippingUploadResult struct {
+	Clippings []*Clipping
+	Authors   []*Author
+	Titles    []*Title
+	Errors    []*error
+}
+
+
+// ClippingService handles clipping use cases
+type ClippingService interface {
+	HandleUpload(r io.Reader) (ClippingUploadResult, error)
+	GetClippingsRepo() ClippingRepository
+	GetAuthorsRepo() AuthorRepository
+	GetTitlesRepo() TitleRepository
 }
