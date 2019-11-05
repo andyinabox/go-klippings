@@ -10,7 +10,7 @@ type DBFilters struct {
 
 // DBService is an abstract interface for the main database
 type DBService interface {
-	Open(config interface{}) error
+	Open() error
 	Close() error
 	Count(collection string, selector interface{}) (int, error)
 	FindOne(collection string, selector interface{}, fields interface{}, model interface{}) error
